@@ -157,6 +157,8 @@ CREATE TABLE Marks (
     FOREIGN KEY (CourseCode) REFERENCES Course_Unit(CourseCode)
 );
 
+--- Many to Many Relationships -----
+
 13. Student_Course 
 
 CREATE TABLE Student_Course (
