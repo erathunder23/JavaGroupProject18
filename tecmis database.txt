@@ -1,0 +1,178 @@
+CREATE DATABASE tecmis_db;
+USE tecmis_db;
+
+1.Department Table
+
+CREATE TABLE Department (
+    DeptID VARCHAR(10) PRIMARY KEY,
+    DeptName VARCHAR(100) NOT NULL
+);
+
+2. Admin Table
+
+CREATE TABLE Admin (
+    AdminID VARCHAR(10) PRIMARY KEY,
+    First_name VARCHAR(50),
+    Last_name VARCHAR(50),
+    Email VARCHAR(100) UNIQUE,
+    Gender VARCHAR(10),
+    DOB DATE,
+    Telephone VARCHAR(15),
+    Password VARCHAR(255) NOT NULL
+);
+
+3. Technical Officer Table
+
+CREATE TABLE Tech_Officer (
+    TechID VARCHAR(10) PRIMARY KEY,
+    Name VARCHAR(100),
+    Email VARCHAR(100) UNIQUE,
+    Gender VARCHAR(10),
+    DOB DATE,
+    Telephone VARCHAR(15),
+    Password VARCHAR(255) NOT NULL
+);
+
+4. Lecturer Table
+
+CREATE TABLE Lecturer (
+    LecturerID VARCHAR(10) PRIMARY KEY,
+    First_name VARCHAR(50),
+    Last_name VARCHAR(50),
+    Email VARCHAR(100) UNIQUE,
+    Gender VARCHAR(10),
+    DOB DATE,
+    Telephone VARCHAR(15),
+    DeptID VARCHAR(10),
+    Password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+);
+
+5. Student Table
+
+CREATE TABLE Student (
+    StuID VARCHAR(20) PRIMARY KEY,
+    First_name VARCHAR(50),
+    Last_name VARCHAR(50),
+    Email VARCHAR(100) UNIQUE,
+    Gender VARCHAR(10),
+    DOB DATE,
+    Telephone VARCHAR(15),
+    Level VARCHAR(10), 
+    GPA FLOAT DEFAULT 0.0,
+    DeptID VARCHAR(10),
+    Password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+);
+
+ 6. Module Table
+
+CREATE TABLE Module (
+    ModuleID VARCHAR(10) PRIMARY KEY,
+    ModuleName VARCHAR(100),
+    Credit INT,
+    Type VARCHAR(20),
+    Hours INT DEFAULT 0
+);
+
+7. Course Unit Table
+
+CREATE TABLE Course_Unit (
+    CourseCode VARCHAR(10) PRIMARY KEY,
+    Title VARCHAR(100),
+    Credit INT,
+    Theory_hrs INT,
+    Practical_hrs INT,
+    ModuleID VARCHAR(10),
+    LecturerID VARCHAR(10),
+    FOREIGN KEY (ModuleID) REFERENCES Module(ModuleID),
+    FOREIGN KEY (LecturerID) REFERENCES Lecturer(LecturerID)
+);
+
+8. Notice Table
+
+CREATE TABLE Notice (
+    NoticeID VARCHAR(10) PRIMARY KEY,
+    Title VARCHAR(200),
+    Description TEXT,
+    Date DATE,
+    AdminID VARCHAR(10),
+    FOREIGN KEY (AdminID) REFERENCES Admin(AdminID)
+);
+
+9. Timetable Table
+
+CREATE TABLE Timetable (
+    TTID VARCHAR(10) PRIMARY KEY,
+    Batch VARCHAR(10),
+    Content TEXT,
+    DeptID VARCHAR(10),
+    AdminID VARCHAR(10),
+    FOREIGN KEY (DeptID) REFERENCES Department(DeptID),
+    FOREIGN KEY (AdminID) REFERENCES Admin(AdminID)
+);
+
+10. Medical Table
+
+CREATE TABLE Medical (
+    MedicalID VARCHAR(10) PRIMARY KEY,
+    StuID VARCHAR(20),
+    CourseCode VARCHAR(10),
+    SubmissionDate DATE,
+    Description TEXT,
+    Status VARCHAR(20),
+    FOREIGN KEY (StuID) REFERENCES Student(StuID),
+    FOREIGN KEY (CourseCode) REFERENCES Course_Unit(CourseCode)
+);
+
+11. Attendance Table
+
+CREATE TABLE Attendance (
+    AttendanceID INT AUTO_INCREMENT PRIMARY KEY,
+    StuID VARCHAR(20),
+    CourseCode VARCHAR(10),
+    Date DATE,
+    Type VARCHAR(20),
+    Status VARCHAR(10),
+    FOREIGN KEY (StuID) REFERENCES Student(StuID),
+    FOREIGN KEY (CourseCode) REFERENCES Course_Unit(CourseCode)
+);
+
+12. Marks Table 
+
+CREATE TABLE Marks (
+    MarkID INT AUTO_INCREMENT PRIMARY KEY,
+    StuID VARCHAR(20),
+    CourseCode VARCHAR(10),
+    Quiz1 FLOAT DEFAULT 0,
+    Quiz2 FLOAT DEFAULT 0,
+    Quiz3 FLOAT DEFAULT 0,
+    Assignment FLOAT DEFAULT 0,
+    Project FLOAT DEFAULT 0,
+    Mid_Theory FLOAT DEFAULT 0,
+    Mid_Practical FLOAT DEFAULT 0,
+    End_Theory FLOAT DEFAULT 0,
+    End_Practical FLOAT DEFAULT 0,
+    FOREIGN KEY (StuID) REFERENCES Student(StuID),
+    FOREIGN KEY (CourseCode) REFERENCES Course_Unit(CourseCode)
+);
+
+13. Student_Course 
+
+CREATE TABLE Student_Course (
+    StuID VARCHAR(20),
+    CourseCode VARCHAR(10),
+    PRIMARY KEY (StuID, CourseCode),
+    FOREIGN KEY (StuID) REFERENCES Student(StuID),
+    FOREIGN KEY (CourseCode) REFERENCES Course_Unit(CourseCode)
+);
+
+14. Lecturer_Course 
+
+CREATE TABLE Lecturer_Course (
+    LecturerID VARCHAR(10),
+    CourseCode VARCHAR(10),
+    PRIMARY KEY (LecturerID, CourseCode),
+    FOREIGN KEY (LecturerID) REFERENCES Lecturer(LecturerID),
+    FOREIGN KEY (CourseCode) REFERENCES Course_Unit(CourseCode)
+);
