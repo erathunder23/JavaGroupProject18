@@ -7,7 +7,7 @@ import java.awt.image.BufferedImage;
 
 public class StudentDashboards extends JFrame {
     private JPanel mainPanel;
-    private Image profileImage = null; // පින්තූරය තබා ගැනීමට variable එකක්
+    private Image profileImage = null; // Variable for store image
 
     public StudentDashboards() {
         setTitle("Student LMS Dashboard");
@@ -37,7 +37,7 @@ public class StudentDashboards extends JFrame {
         mainPanel = new JPanel(new CardLayout());
         mainPanel.add(createProfilePanel(), "Profile");
 
-        // අන් පැනල් සඳහා (Placeholders)
+        // Other panels (Placeholders)
         for(int i = 1; i < sections.length; i++) {
             mainPanel.add(new JLabel(sections[i] + " Details (View Only)", JLabel.CENTER), sections[i]);
         }
@@ -63,7 +63,7 @@ public class StudentDashboards extends JFrame {
                 int size = Math.min(getWidth(), getHeight()) - 4;
                 Shape circle = new Ellipse2D.Double(2, 2, size, size);
 
-                // පින්තූරය රවුමට කොටු කිරීම (Clipping)
+                // Image circular layout(Clipping)
                 g2.setClip(circle);
 
                 if (profileImage != null) {
@@ -92,11 +92,11 @@ public class StudentDashboards extends JFrame {
         photoBtn.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             int result = fileChooser.showOpenDialog(panel);
-            if (result == JFileChooser.APPROVE_OPTION) { // මෙහි APPROVE_OPTION නිවැරදිය
+            if (result == JFileChooser.APPROVE_OPTION) { 
                 try {
                     File file = fileChooser.getSelectedFile();
                     profileImage = ImageIO.read(file);
-                    profilePicDisplay.repaint(); // Screen එක refresh කිරීමට
+                    profilePicDisplay.repaint(); // Refresh Screen
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(panel, "Error loading image!", "Error", JOptionPane.ERROR_MESSAGE);
                 }
