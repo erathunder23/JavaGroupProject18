@@ -305,18 +305,185 @@ public class TechOfficer extends User implements Manageable {
         tabs.setForeground(text);
         tabs.setFont(labelFont);
 
-        JPanel addPanel = buildTechOfficerFormPanel(bg, panel, accent, text, labelFont);
-        JPanel viewPanel = buildTechOfficerViewPanel(bg, panel, accent, text, labelFont);
+        JPanel addPanel        = buildTechOfficerFormPanel(bg, panel, accent, text, labelFont);
+        JPanel viewPanel       = buildTechOfficerViewPanel(bg, panel, accent, text, labelFont);
         JPanel attendancePanel = buildAttendanceUploadPanel(bg, panel, accent, text, labelFont);
+        JPanel deletePanel     = buildDeleteOfficerPanel(bg, panel, accent, text, labelFont);  // NEW TAB
 
-        tabs.addTab("Add Officer", addPanel);
-        tabs.addTab("View Officers", viewPanel);
-        tabs.addTab("Upload Attendance", attendancePanel);
+        tabs.addTab("Add Officer",        addPanel);
+        tabs.addTab("View Officers",      viewPanel);
+        tabs.addTab("Upload Attendance",  attendancePanel);
+        tabs.addTab("Delete Officer",     deletePanel);                                        // NEW TAB
 
         frame.add(tabs, BorderLayout.CENTER);
         frame.setVisible(true);
     }
 
+    // -----------------------------------------------------------------------
+    // NEW: Delete Officer Panel
+    // -----------------------------------------------------------------------
+    private static JPanel buildDeleteOfficerPanel(Color bg, Color panel, Color accent, Color text, Font labelFont) {
+
+        // ---- colours ----
+        Color dangerRed   = new Color(220, 53, 69);   // delete button
+        Color warningAmber = new Color(255, 193, 7);  // confirm highlight
+
+        // ---- outer panel ----
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setBackground(bg);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 15, 8, 15);
+        gbc.fill   = GridBagConstraints.HORIZONTAL;
+
+        // ---- Tech ID field ----
+        JLabel idLabel = new JLabel("Tech ID:");
+        idLabel.setForeground(text);
+        idLabel.setFont(labelFont);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 1;
+        p.add(idLabel, gbc);
+
+        JTextField idField = new JTextField(20);
+        idField.setBackground(new Color(40, 40, 65));
+        idField.setForeground(text);
+        idField.setCaretColor(text);
+        idField.setBorder(BorderFactory.createLineBorder(accent));
+        gbc.gridx = 1;
+        p.add(idField, gbc);
+
+        // ---- Lookup button ----
+        JButton lookupBtn = new JButton("Look Up Officer");
+        lookupBtn.setBackground(accent);
+        lookupBtn.setForeground(Color.WHITE);
+        lookupBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lookupBtn.setBorderPainted(false);
+        lookupBtn.setFocusPainted(false);
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
+        p.add(lookupBtn, gbc);
+
+        // ---- Info display area ----
+        JTextArea infoArea = new JTextArea(5, 30);
+        infoArea.setBackground(new Color(25, 25, 42));
+        infoArea.setForeground(warningAmber);
+        infoArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        infoArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(70, 70, 100)),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
+        infoArea.setEditable(false);
+        infoArea.setText("Officer details will appear here after lookup.");
+        JScrollPane infoScroll = new JScrollPane(infoArea);
+        infoScroll.setBorder(BorderFactory.createEmptyBorder());
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        p.add(infoScroll, gbc);
+
+        // ---- Delete button (disabled until lookup succeeds) ----
+        JButton deleteBtn = new JButton("Delete Officer");
+        deleteBtn.setBackground(dangerRed);
+        deleteBtn.setForeground(Color.WHITE);
+        deleteBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        deleteBtn.setBorderPainted(false);
+        deleteBtn.setFocusPainted(false);
+        deleteBtn.setEnabled(false);   // disabled until a valid record is found
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        p.add(deleteBtn, gbc);
+
+        // ---- Status label ----
+        JLabel statusLabel = new JLabel(" ");
+        statusLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        statusLabel.setForeground(warningAmber);
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        p.add(statusLabel, gbc);
+
+        // ---- Lookup action ----
+        // Stores whether a valid record was found so the delete button knows what to delete
+        final String[] foundTechId = { null };
+
+        lookupBtn.addActionListener(e -> {
+            String inputId = idField.getText().trim();
+            if (inputId.isEmpty()) {
+                infoArea.setText("Please enter a Tech ID.");
+                deleteBtn.setEnabled(false);
+                foundTechId[0] = null;
+                return;
+            }
+            try {
+                Connection conn = DatabaseConnection.getConnection();
+                String sql = "SELECT * FROM Tech_Officer WHERE TechID = ?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, inputId);
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    // Build a readable summary of the record
+                    String name      = rs.getString("Name");
+                    String email     = rs.getString("Email");
+                    String gender    = rs.getString("Gender");
+                    String telephone = rs.getString("Telephone");
+
+                    infoArea.setText(
+                            "Tech ID   : " + inputId   + "\n" +
+                                    "Name      : " + name      + "\n" +
+                                    "Email     : " + email     + "\n" +
+                                    "Gender    : " + gender    + "\n" +
+                                    "Telephone : " + telephone + "\n\n" +
+                                    "Review the details above before deleting."
+                    );
+                    deleteBtn.setEnabled(true);
+                    foundTechId[0] = inputId;
+                    statusLabel.setText("Record found. Click 'Delete Officer' to remove permanently.");
+                } else {
+                    infoArea.setText("No Tech Officer found with ID: " + inputId);
+                    deleteBtn.setEnabled(false);
+                    foundTechId[0] = null;
+                    statusLabel.setText("");
+                }
+            } catch (SQLException ex) {
+                infoArea.setText("Database error: " + ex.getMessage());
+                deleteBtn.setEnabled(false);
+                foundTechId[0] = null;
+                JOptionPane.showMessageDialog(p, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        // ---- Delete action ----
+        deleteBtn.addActionListener(e -> {
+            if (foundTechId[0] == null) return;
+
+            // Confirmation dialog to prevent accidental deletions
+            int confirm = JOptionPane.showConfirmDialog(
+                    p,
+                    "Are you sure you want to permanently delete Tech Officer with ID: " + foundTechId[0] + "?\n"
+                            + "This action cannot be undone.",
+                    "Confirm Deletion",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirm != JOptionPane.YES_OPTION) return;
+
+            TechOfficer to = new TechOfficer();
+            to.setTechId(foundTechId[0]);
+
+            if (to.delete()) {
+                JOptionPane.showMessageDialog(p,
+                        "Tech Officer '" + foundTechId[0] + "' deleted successfully.",
+                        "Deleted", JOptionPane.INFORMATION_MESSAGE);
+                // Reset the panel
+                idField.setText("");
+                infoArea.setText("Officer details will appear here after lookup.");
+                deleteBtn.setEnabled(false);
+                foundTechId[0] = null;
+                statusLabel.setText("");
+            }
+            // delete() already shows an error dialog on failure, so no else needed here
+        });
+
+        return p;
+    }
+
+    // -----------------------------------------------------------------------
+    // Existing panel builders (unchanged)
+    // -----------------------------------------------------------------------
     private static JPanel buildTechOfficerFormPanel(Color bg, Color panel, Color accent, Color text, Font labelFont) {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBackground(bg);

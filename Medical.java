@@ -171,10 +171,10 @@ public class Medical implements Manageable {
         tabs.setForeground(textColor);
         tabs.setFont(labelFont);
 
-        tabs.addTab("Submit Medical", buildSubmitPanel(bg, panelColor, accent, textColor, labelFont));
-        tabs.addTab("View Records", buildViewPanel(bg, panelColor, accent, textColor, labelFont));
-        tabs.addTab("Update Status", buildUpdateStatusPanel(bg, panelColor, accent, textColor, labelFont));
-        tabs.addTab("Delete Record", buildDeletePanel(bg, panelColor, accent, textColor, labelFont));
+        tabs.addTab("Submit Medical",  buildSubmitPanel(bg, panelColor, accent, textColor, labelFont));
+        tabs.addTab("View Records",    buildViewPanel(bg, panelColor, accent, textColor, labelFont));  // MODIFIED
+        tabs.addTab("Update Status",   buildUpdateStatusPanel(bg, panelColor, accent, textColor, labelFont));
+        tabs.addTab("Delete Record",   buildDeletePanel(bg, panelColor, accent, textColor, labelFont));
 
         frame.add(tabs, BorderLayout.CENTER);
         frame.setVisible(true);
@@ -234,26 +234,101 @@ public class Medical implements Manageable {
         return p;
     }
 
+    // -----------------------------------------------------------------------
+    // MODIFIED: View Records panel — now includes a search bar
+    // -----------------------------------------------------------------------
     private static JPanel buildViewPanel(Color bg, Color panel, Color accent, Color text, Font lf) {
-        JPanel p = new JPanel(new BorderLayout(10, 10));
+        Color fieldBg    = new Color(30, 55, 40);
+        Color searchBtnBg = new Color(50, 160, 110);   // slightly darker green for search button
+        Color clearBtnBg  = new Color(60, 60, 90);     // neutral dark for clear/show-all
+
+        // ---- Outer panel (BorderLayout: search bar NORTH, table CENTER, load button SOUTH) ----
+        JPanel p = new JPanel(new BorderLayout(8, 8));
         p.setBackground(bg);
         p.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // ---- Table ----
         String[] cols = {"MedicalID", "StuID", "CourseCode", "Submission Date", "Description", "Status"};
-        DefaultTableModel model = new DefaultTableModel(cols, 0);
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
         JTable table = new JTable(model);
         table.setBackground(new Color(25, 45, 35));
         table.setForeground(text);
         table.setGridColor(new Color(40, 80, 60));
         table.setFont(lf);
+        table.setRowHeight(24);
         table.getTableHeader().setBackground(accent);
         table.getTableHeader().setForeground(Color.BLACK);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.getViewport().setBackground(new Color(25, 45, 35));
         p.add(scroll, BorderLayout.CENTER);
 
-        JButton loadBtn = new JButton("Load Records");
+        // ---- Search bar (NORTH) ----
+        JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
+        searchBar.setBackground(new Color(20, 38, 28));
+        searchBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(50, 100, 70)),
+                BorderFactory.createEmptyBorder(4, 4, 4, 4)));
+
+        // Search-type selector
+        JLabel byLabel = new JLabel("Search by:");
+        byLabel.setForeground(text);
+        byLabel.setFont(lf);
+        searchBar.add(byLabel);
+
+        String[] searchTypes = {"Medical ID", "Student ID"};
+        JComboBox<String> typeBox = new JComboBox<>(searchTypes);
+        typeBox.setBackground(fieldBg);
+        typeBox.setForeground(text);
+        typeBox.setFont(lf);
+        typeBox.setPreferredSize(new Dimension(130, 30));
+        searchBar.add(typeBox);
+
+        // Search text field
+        JTextField searchField = new JTextField(20);
+        searchField.setBackground(fieldBg);
+        searchField.setForeground(text);
+        searchField.setCaretColor(text);
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(accent),
+                BorderFactory.createEmptyBorder(2, 6, 2, 6)));
+        searchField.setFont(lf);
+        searchField.setPreferredSize(new Dimension(200, 30));
+        searchBar.add(searchField);
+
+        // Search button
+        JButton searchBtn = new JButton("Search");
+        searchBtn.setBackground(searchBtnBg);
+        searchBtn.setForeground(Color.WHITE);
+        searchBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        searchBtn.setBorderPainted(false);
+        searchBtn.setFocusPainted(false);
+        searchBtn.setPreferredSize(new Dimension(90, 30));
+        searchBar.add(searchBtn);
+
+        // Clear / Show All button
+        JButton clearBtn = new JButton("Show All");
+        clearBtn.setBackground(clearBtnBg);
+        clearBtn.setForeground(text);
+        clearBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        clearBtn.setBorderPainted(false);
+        clearBtn.setFocusPainted(false);
+        clearBtn.setPreferredSize(new Dimension(90, 30));
+        searchBar.add(clearBtn);
+
+        // Result count label
+        JLabel resultLabel = new JLabel("  ");
+        resultLabel.setForeground(new Color(160, 220, 180));
+        resultLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        searchBar.add(resultLabel);
+
+        p.add(searchBar, BorderLayout.NORTH);
+
+        // ---- Bottom load button (kept for convenience) ----
+        JButton loadBtn = new JButton("Load All Records");
         loadBtn.setBackground(accent);
         loadBtn.setForeground(Color.BLACK);
         loadBtn.setBorderPainted(false);
@@ -261,11 +336,17 @@ public class Medical implements Manageable {
         loadBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         p.add(loadBtn, BorderLayout.SOUTH);
 
-        loadBtn.addActionListener(e -> {
+        // ---- Helper: populate table from a ResultSet ----
+        // Uses a local interface so we can reuse the table-fill logic
+        Runnable[] loadAll = new Runnable[1];   // forward-declare so clearBtn can call it
+
+        // ---- Load all records action ----
+        loadAll[0] = () -> {
             model.setRowCount(0);
             try {
                 Connection conn = DatabaseConnection.getConnection();
-                ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM Medical");
+                ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM Medical ORDER BY SubmissionDate DESC");
+                int count = 0;
                 while (rs.next()) {
                     model.addRow(new Object[]{
                             rs.getString("MedicalID"),
@@ -275,10 +356,85 @@ public class Medical implements Manageable {
                             rs.getString("Description"),
                             rs.getString("Status")
                     });
+                    count++;
                 }
+                resultLabel.setText("  " + count + " record(s) found");
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(p, "Error: " + ex.getMessage(), "DB Error", JOptionPane.ERROR_MESSAGE);
             }
+        };
+
+        loadBtn.addActionListener(e -> loadAll[0].run());
+
+        // ---- Search action ----
+        Runnable doSearch = () -> {
+            String keyword = searchField.getText().trim();
+            if (keyword.isEmpty()) {
+                JOptionPane.showMessageDialog(p, "Please enter a search value.", "Search", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            model.setRowCount(0);
+            try {
+                Connection conn = DatabaseConnection.getConnection();
+                String col = typeBox.getSelectedItem().equals("Medical ID") ? "MedicalID" : "StuID";
+
+                // Exact match for Medical ID; partial (LIKE) match for Student ID
+                // so searching a student shows ALL their medical records
+                String sql;
+                PreparedStatement ps;
+                if (col.equals("MedicalID")) {
+                    sql = "SELECT * FROM Medical WHERE MedicalID = ? ORDER BY SubmissionDate DESC";
+                    ps = conn.prepareStatement(sql);
+                    ps.setString(1, keyword);
+                } else {
+                    // LIKE search so partial Student IDs still return results
+                    sql = "SELECT * FROM Medical WHERE StuID LIKE ? ORDER BY SubmissionDate DESC";
+                    ps = conn.prepareStatement(sql);
+                    ps.setString(1, "%" + keyword + "%");
+                }
+
+                ResultSet rs = ps.executeQuery();
+                int count = 0;
+                while (rs.next()) {
+                    model.addRow(new Object[]{
+                            rs.getString("MedicalID"),
+                            rs.getString("StuID"),
+                            rs.getString("CourseCode"),
+                            rs.getDate("SubmissionDate"),
+                            rs.getString("Description"),
+                            rs.getString("Status")
+                    });
+                    count++;
+                }
+
+                if (count == 0) {
+                    resultLabel.setText("  No records found for: " + keyword);
+                } else {
+                    resultLabel.setText("  " + count + " record(s) found");
+                }
+
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(p, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        };
+
+        searchBtn.addActionListener(e -> doSearch.run());
+
+        // Allow pressing Enter in the search field to trigger search
+        searchField.addActionListener(e -> doSearch.run());
+
+        // Clear button resets search field and reloads all records
+        clearBtn.addActionListener(e -> {
+            searchField.setText("");
+            loadAll[0].run();
+        });
+
+        // Clear result label whenever search type changes
+        typeBox.addActionListener(e -> {
+            searchField.setText("");
+            resultLabel.setText("  ");
+            model.setRowCount(0);
         });
 
         return p;
