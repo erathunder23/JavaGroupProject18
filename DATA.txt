@@ -1,0 +1,122 @@
+INSERT INTO Department (DeptID, DeptName) VALUES
+('D001', 'ICT'),
+('D002', 'ET'),
+('D003', 'BST');
+
+
+INSERT INTO Admin (AdminID, First_name, Last_name, Email, Gender, DOB, Telephone, Password) VALUES
+('A001', 'Sarah',  'Mitchell', 'sarah.mitchell@tecmis.edu', 'Female', '1985-03-12', '0712345001', '$2b$12$hashed_admin_pass_1'),
+('A002', 'James',  'Thornton', 'james.thornton@tecmis.edu', 'Male',   '1980-07-24', '0712345002', '$2b$12$hashed_admin_pass_2'),
+('A003', 'Priya',  'Sharma',   'priya.sharma@tecmis.edu',   'Female', '1990-11-05', '0712345003', '$2b$12$hashed_admin_pass_3');
+
+
+
+INSERT INTO Tech_Officer (TechID, Name, Email, Gender, DOB, Telephone, Password) VALUES
+('T001', 'Marcus Webb',   'marcus.webb@tecmis.edu',   'Male',   '1988-06-15', '0712346001', '$2b$12$hashed_tech_pass_1'),
+('T002', 'Anita Pereira', 'anita.pereira@tecmis.edu', 'Female', '1992-09-20', '0712346002', '$2b$12$hashed_tech_pass_2'),
+('T003', 'Leon Hartley',  'leon.hartley@tecmis.edu',  'Male',   '1987-02-28', '0712346003', '$2b$12$hashed_tech_pass_3');
+
+
+INSERT INTO Lecturer (LecturerID, First_name, Last_name, Email, Gender, DOB, Telephone, DeptID, Password) VALUES
+('L001', 'Dr. Alan',   'Foster',    'alan.foster@tecmis.edu',    'Male',   '1975-04-18', '0712347001', 'D001', '$2b$12$hashed_lec_pass_1'),
+('L002', 'Dr. Nina',   'Castillo',  'nina.castillo@tecmis.edu',  'Female', '1978-08-30', '0712347002', 'D001', '$2b$12$hashed_lec_pass_2'),
+('L003', 'Prof. Owen', 'Blackwood', 'owen.blackwood@tecmis.edu', 'Male',   '1970-12-01', '0712347003', 'D002', '$2b$12$hashed_lec_pass_3'),
+('L004', 'Dr. Yasmin', 'Karimi',    'yasmin.karimi@tecmis.edu',  'Female', '1982-05-22', '0712347004', 'D002', '$2b$12$hashed_lec_pass_4'),
+('L005', 'Dr. Ethan',  'Morrison',  'ethan.morrison@tecmis.edu', 'Male',   '1979-01-10', '0712347005', 'D003', '$2b$12$hashed_lec_pass_5'),
+('L006', 'Dr. Clara',  'Bennett',   'clara.bennett@tecmis.edu',  'Female', '1983-07-14', '0712347006', 'D003', '$2b$12$hashed_lec_pass_6');
+
+
+INSERT INTO Student (StuID, First_name, Last_name, Email, Gender, DOB, Telephone, Level, GPA, DeptID, Password) VALUES
+('TG1012', 'Oliver',  'Nguyen',   'oliver.nguyen@student.tecmis.edu',  'Male',   '2002-03-14', '0712348001', 'L2', 3.5, 'D001', '$2b$12$hashed_stu_1'),
+('TG1013', 'Amara',   'Osei',     'amara.osei@student.tecmis.edu',     'Female', '2003-07-09', '0712348002', 'L2', 3.8, 'D001', '$2b$12$hashed_stu_2'),
+('TG1014', 'Lucas',   'Ferreira', 'lucas.ferreira@student.tecmis.edu', 'Male',   '2002-11-21', '0712348003', 'L2', 2.9, 'D001', '$2b$12$hashed_stu_3'),
+('TG1015', 'Zara',    'Ahmed',    'zara.ahmed@student.tecmis.edu',     'Female', '2003-01-30', '0712348004', 'L2', 3.2, 'D002', '$2b$12$hashed_stu_4'),
+('TG1016', 'Kai',     'Tanaka',   'kai.tanaka@student.tecmis.edu',     'Male',   '2003-05-17', '0712348005', 'L2', 3.0, 'D002', '$2b$12$hashed_stu_5'),
+('TG1017', 'Fatima',  'Hassan',   'fatima.hassan@student.tecmis.edu',  'Female', '2004-08-25', '0712348006', 'L2', 3.6, 'D002', '$2b$12$hashed_stu_6'),
+('TG1018', 'Nathan',  'Brooks',   'nathan.brooks@student.tecmis.edu',  'Male',   '2003-12-04', '0712348007', 'L2', 2.7, 'D003', '$2b$12$hashed_stu_7'),
+('TG1019', 'Sofia',   'Marconi',  'sofia.marconi@student.tecmis.edu',  'Female', '2004-02-19', '0712348008', 'L2', 3.9, 'D003', '$2b$12$hashed_stu_8'),
+('TG1020', 'Ravi',    'Patel',    'ravi.patel@student.tecmis.edu',     'Male',   '2003-09-11', '0712348009', 'L2', 3.1, 'D003', '$2b$12$hashed_stu_9');
+
+
+INSERT INTO Module (ModuleID, ModuleName, Credit, Type, Hours) VALUES
+('ICT2113', 'DSA',                3, 'T', 45),
+('ICT2142', 'OOAD',               3, 'T', 45),
+('TCS2121', 'SOFT SKILLS',        2, 'T', 30),
+('ICT2152', 'E COMMERCE',         3, 'T', 45),
+('ICT2122', 'OOP',                3, 'T', 45),
+('ICT2132', 'OOP PRACTICUM',      3, 'P', 60),
+('TCS2112', 'BUSINESS ECONOMICS', 2, 'T', 30),
+('ENG2112', 'ENGLISH',            2, 'T', 30);
+
+
+INSERT INTO Course_Unit (CourseCode, Title, Credit, Theory_hrs, Practical_hrs, ModuleID, LecturerID) VALUES
+('ICT2113A', 'Data Structures & Algorithms',    3, 45,  0,  'ICT2113', 'L001'),
+('ICT2142A', 'Object Oriented Analysis & Design',3,45,  0,  'ICT2142', 'L001'),
+('TCS2121A', 'Soft Skills Development',         2, 30,  0,  'TCS2121', 'L006'),
+('ICT2152A', 'Electronic Commerce',             3, 30, 15,  'ICT2152', 'L005'),
+('ICT2122A', 'Object Oriented Programming',     3, 30, 15,  'ICT2122', 'L002'),
+('ICT2132A', 'OOP Practicum',                   3,  0, 60,  'ICT2132', 'L002'),
+('TCS2112A', 'Business Economics',              2, 30,  0,  'TCS2112', 'L003'),
+('ENG2112A', 'English Language',                2, 30,  0,  'ENG2112', 'L006');
+
+
+INSERT INTO Notice (NoticeID, Title, Description, Date, AdminID) VALUES
+('N001', 'Mid-Semester Exam Schedule Released', 'Please check your student portal for your personalised timetable. Exams begin 2025-11-10.', '2025-10-25', 'A001'),
+('N002', 'Campus Maintenance on 2025-11-02',    'Labs and computer rooms will be unavailable from 08:00 to 14:00 on the above date.',          '2025-10-28', 'A002'),
+('N003', 'New Course Registration Open',        'Level 2 students may now register for elective modules. Deadline: 2025-11-15.',                '2025-11-01', 'A001'),
+('N004', 'Guest Lecture: AI in Industry',       'Prof. Rachel Green will speak on 2025-11-20 at 10:00 in Hall A.',                             '2025-11-05', 'A003');
+
+
+INSERT INTO Attendance (StuID, CourseCode, Date, Type, Status) VALUES
+('TG1012', 'ICT2113A', '2025-10-01', 'T', 'Present'),
+('TG1012', 'ICT2122A', '2025-10-02', 'T', 'Present'),
+('TG1013', 'ICT2113A', '2025-10-01', 'T', 'Present'),
+('TG1013', 'ICT2132A', '2025-10-03', 'P', 'Absent'),
+('TG1014', 'ICT2122A', '2025-10-02', 'T', 'Absent'),
+('TG1014', 'ICT2132A', '2025-10-03', 'P', 'Present'),
+('TG1015', 'ICT2142A', '2025-10-06', 'T', 'Present'),
+('TG1015', 'TCS2112A', '2025-10-07', 'T', 'Present'),
+('TG1016', 'ICT2132A', '2025-10-08', 'P', 'Absent'),
+('TG1017', 'ICT2152A', '2025-10-09', 'T', 'Present'),
+('TG1018', 'TCS2121A', '2025-10-10', 'T', 'Present'),
+('TG1019', 'ENG2112A', '2025-10-11', 'T', 'Absent'),
+('TG1020', 'TCS2112A', '2025-10-07', 'T', 'Present'),
+('TG1020', 'ICT2152A', '2025-10-09', 'T', 'Absent');
+
+
+INSERT INTO Marks (StuID, CourseCode, Quiz1, Quiz2, Quiz3, Assignment, Project, Mid_Theory, Mid_Practical, End_Theory, End_Practical) VALUES
+('TG1012', 'ICT2113A', 8.0, 7.5, 9.0, 18.0, 22.0, 28.0, 0.0,  38.0, 0.0),
+('TG1012', 'ICT2122A', 7.5, 8.0, 8.5, 17.0, 21.0, 26.0, 13.0, 36.0, 17.0),
+('TG1013', 'ICT2113A', 9.0, 8.5, 9.5, 19.0, 24.0, 30.0, 0.0,  40.0, 0.0),
+('TG1013', 'ICT2132A', 0.0, 0.0, 0.0,  0.0, 23.0,  0.0, 14.0,  0.0, 19.0),
+('TG1014', 'ICT2122A', 6.0, 5.5, 7.0, 14.0, 18.0, 22.0, 11.0, 30.0, 14.0),
+('TG1014', 'ICT2132A', 0.0, 0.0, 0.0,  0.0, 20.0,  0.0, 13.0,  0.0, 17.0),
+('TG1015', 'ICT2142A', 7.5, 8.0, 7.0, 16.0, 20.0, 25.0, 0.0,  35.0, 0.0),
+('TG1015', 'TCS2112A', 8.0, 7.0, 8.5, 17.0, 0.0,  24.0, 0.0,  33.0, 0.0),
+('TG1016', 'ICT2132A', 0.0, 0.0, 0.0,  0.0, 19.0,  0.0, 10.0,  0.0, 15.0),
+('TG1017', 'ICT2152A', 9.0, 9.5, 9.0, 19.5, 24.0, 29.0, 0.0,  41.0, 0.0),
+('TG1018', 'TCS2121A', 8.5, 8.0, 9.0, 18.0, 0.0,  27.0, 0.0,  37.0, 0.0),
+('TG1019', 'ENG2112A', 7.0, 6.5, 7.5, 15.0, 0.0,  23.0, 0.0,  32.0, 0.0),
+('TG1020', 'TCS2112A', 6.5, 7.0, 6.0, 14.0, 0.0,  21.0, 0.0,  29.0, 0.0),
+('TG1020', 'ICT2152A', 7.0, 7.5, 8.0, 16.0, 20.0, 24.0, 0.0,  34.0, 0.0);
+
+
+
+INSERT INTO Student_Course (StuID, CourseCode) VALUES
+('TG1012', 'ICT2113A'), ('TG1012', 'ICT2122A'), ('TG1012', 'ICT2142A'),
+('TG1013', 'ICT2113A'), ('TG1013', 'ICT2132A'), ('TG1013', 'ENG2112A'),
+('TG1014', 'ICT2122A'), ('TG1014', 'ICT2132A'), ('TG1014', 'TCS2121A'),
+('TG1015', 'ICT2142A'), ('TG1015', 'TCS2112A'), ('TG1015', 'ICT2152A'),
+('TG1016', 'ICT2132A'), ('TG1016', 'ICT2122A'),
+('TG1017', 'ICT2152A'), ('TG1017', 'ICT2142A'),
+('TG1018', 'TCS2121A'), ('TG1018', 'ENG2112A'),
+('TG1019', 'ENG2112A'), ('TG1019', 'TCS2121A'),
+('TG1020', 'TCS2112A'), ('TG1020', 'ICT2152A');
+
+
+INSERT INTO Lecturer_Course (LecturerID, CourseCode) VALUES
+('L001', 'ICT2113A'), ('L001', 'ICT2142A'),
+('L002', 'ICT2122A'), ('L002', 'ICT2132A'),
+('L003', 'TCS2112A'),
+('L005', 'ICT2152A'),
+('L006', 'TCS2121A'), ('L006', 'ENG2112A');
