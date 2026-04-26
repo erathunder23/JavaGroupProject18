@@ -8,12 +8,17 @@ import utils.LogoUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.sql.Time;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 public class AdminUI extends JFrame {
     private UserDAO userDAO;
@@ -23,6 +28,12 @@ public class AdminUI extends JFrame {
 
     private JTable studentTable, lecturerTable, officerTable, courseTable, noticeTable, timetableTable;
     private DefaultTableModel studentModel, lecturerModel, officerModel, courseModel, noticeModel, timetableModel;
+
+    // Profile components
+    private JLabel profilePictureLabel;
+    private JTextField fullNameField, emailField, phoneField;
+    private JTextArea contactArea;
+    private User currentAdmin;
 
     private static final Color BG_COLOR = new Color(240, 248, 255);
     private static final Color HEADER_BG = Color.BLACK;
@@ -35,8 +46,10 @@ public class AdminUI extends JFrame {
         courseDAO = new CourseDAO();
         noticeDAO = new NoticeDAO();
         timetableDAO = new TimetableDAO();
+        currentAdmin = SessionManager.getCurrentUser();
         initComponents();
         loadData();
+        loadAdminProfile();
         LogoUtil.setFrameIcon(this);
     }
 
@@ -89,7 +102,7 @@ public class AdminUI extends JFrame {
         userPanel.setBackground(new Color(0, 86, 179));
         JLabel userIcon = new JLabel("👑");
         userIcon.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        JLabel userLabel = new JLabel(" " + SessionManager.getCurrentUser().getFullName() + " (Admin) ");
+        JLabel userLabel = new JLabel(" " + currentAdmin.getFullName() + " (Admin) ");
         userLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         userLabel.setForeground(Color.BLACK);
         userLabel.setBackground(new Color(255, 193, 7));
@@ -101,13 +114,14 @@ public class AdminUI extends JFrame {
 
         setJMenuBar(menuBar);
 
-        // Main Tabbed Pane
+        // Main Tabbed Pane (including Profile tab)
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13));
         tabbedPane.addTab("👥 User Management", createUserManagementPanel());
         tabbedPane.addTab("📚 Course Management", createCourseManagementPanel());
         tabbedPane.addTab("📢 Notice Management", createNoticeManagementPanel());
         tabbedPane.addTab("📅 Timetable Management", createTimetableManagementPanel());
+        tabbedPane.addTab("👤 My Profile", createProfilePanel());   // NEW PROFILE TAB
 
         add(tabbedPane, BorderLayout.CENTER);
 
@@ -115,16 +129,256 @@ public class AdminUI extends JFrame {
         JPanel statusBar = new JPanel(new BorderLayout());
         statusBar.setBackground(new Color(52, 73, 94));
         statusBar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        JLabel statusLabel = new JLabel("✅ Logged in as: " + SessionManager.getCurrentUser().getFullName() + " (Administrator)");
+        JLabel statusLabel = new JLabel("✅ Logged in as: " + currentAdmin.getFullName() + " (Administrator)");
         statusLabel.setForeground(Color.WHITE);
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         statusBar.add(statusLabel, BorderLayout.WEST);
         add(statusBar, BorderLayout.SOUTH);
     }
 
-    // ==================== CUSTOM HEADER RENDERER FOR PERMANENT STYLING ====================
+    // ==================== PROFILE PANEL ====================
+    private JPanel createProfilePanel() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBackground(BG_COLOR);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        // Left side: Profile picture
+        JPanel picturePanel = new JPanel(new BorderLayout());
+        picturePanel.setBackground(BG_COLOR);
+        picturePanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(0, 86, 179)),
+                "Profile Picture",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), new Color(0, 86, 179)));
+
+        profilePictureLabel = new JLabel();
+        profilePictureLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        profilePictureLabel.setPreferredSize(new Dimension(150, 150));
+        loadAndDisplayProfilePicture();
+
+        JButton changePicBtn = ButtonStyleUtil.createInfoButton("📸 Change Photo");
+        changePicBtn.addActionListener(e -> changeAdminProfilePicture());
+
+        JPanel picBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        picBtnPanel.setBackground(BG_COLOR);
+        picBtnPanel.add(changePicBtn);
+
+        picturePanel.add(profilePictureLabel, BorderLayout.CENTER);
+        picturePanel.add(picBtnPanel, BorderLayout.SOUTH);
+
+        // Right side: Editable fields
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(BG_COLOR);
+        formPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(0, 86, 179)),
+                "Admin Information",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12), new Color(0, 86, 179)));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        formPanel.add(new JLabel("Full Name:"), gbc);
+        gbc.gridx = 1;
+        fullNameField = new JTextField(20);
+        fullNameField.setEditable(false);
+        fullNameField.setBackground(new Color(240, 240, 240));
+        formPanel.add(fullNameField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        formPanel.add(new JLabel("Email:"), gbc);
+        gbc.gridx = 1;
+        emailField = new JTextField(20);
+        formPanel.add(emailField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        formPanel.add(new JLabel("Phone:"), gbc);
+        gbc.gridx = 1;
+        phoneField = new JTextField(20);
+        formPanel.add(phoneField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3;
+        formPanel.add(new JLabel("Contact Details:"), gbc);
+        gbc.gridx = 1;
+        contactArea = new JTextArea(5, 20);
+        contactArea.setLineWrap(true);
+        JScrollPane contactScroll = new JScrollPane(contactArea);
+        formPanel.add(contactScroll, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 4;
+        JButton saveBtn = ButtonStyleUtil.createSuccessButton("💾 Save Changes");
+        saveBtn.addActionListener(e -> saveAdminProfile());
+        formPanel.add(saveBtn, gbc);
+
+        JPanel centerPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        centerPanel.setBackground(BG_COLOR);
+        centerPanel.add(picturePanel);
+        centerPanel.add(formPanel);
+
+        panel.add(centerPanel, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void loadAndDisplayProfilePicture() {
+        String picturePath = currentAdmin.getProfilePicture();
+        ImageIcon icon = null;
+
+        if (picturePath != null && !picturePath.isEmpty()) {
+            File imgFile = new File(picturePath);
+            if (imgFile.exists()) {
+                try {
+                    BufferedImage originalImage = ImageIO.read(imgFile);
+                    if (originalImage != null) {
+                        int size = 130;
+                        BufferedImage circularImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D g2d = circularImage.createGraphics();
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        java.awt.geom.Ellipse2D.Double circle = new java.awt.geom.Ellipse2D.Double(0, 0, size, size);
+                        g2d.setClip(circle);
+                        Image scaledImg = originalImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+                        g2d.drawImage(scaledImg, 0, 0, size, size, null);
+                        g2d.dispose();
+                        icon = new ImageIcon(circularImage);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        if (icon == null) {
+            icon = createDefaultAvatar();
+        }
+
+        profilePictureLabel.setIcon(icon);
+    }
+
+    private ImageIcon createDefaultAvatar() {
+        int size = 130;
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setColor(new Color(0, 86, 179));
+        g2d.fillOval(0, 0, size, size);
+        g2d.setColor(Color.WHITE);
+        g2d.setStroke(new BasicStroke(3));
+        g2d.drawOval(2, 2, size - 4, size - 4);
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Segoe UI", Font.BOLD, 48));
+        String initials = getAdminInitials(currentAdmin.getFullName());
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(initials);
+        int textHeight = fm.getAscent();
+        g2d.drawString(initials, (size - textWidth) / 2, (size + textHeight) / 2 - 8);
+        g2d.dispose();
+        return new ImageIcon(image);
+    }
+
+    private String getAdminInitials(String fullName) {
+        if (fullName == null || fullName.isEmpty()) return "A";
+        String[] parts = fullName.split(" ");
+        if (parts.length >= 2) {
+            return String.valueOf(parts[0].charAt(0)) + String.valueOf(parts[1].charAt(0));
+        }
+        return fullName.substring(0, Math.min(2, fullName.length())).toUpperCase();
+    }
+
+    private void loadAdminProfile() {
+        currentAdmin = userDAO.getUserById(currentAdmin.getUserId());
+        if (currentAdmin == null) return;
+        fullNameField.setText(currentAdmin.getFullName());
+        emailField.setText(currentAdmin.getEmail());
+        phoneField.setText(currentAdmin.getPhone());
+        contactArea.setText(currentAdmin.getContactDetails());
+        loadAndDisplayProfilePicture();
+    }
+
+    private void saveAdminProfile() {
+        String newEmail = emailField.getText().trim();
+        String newPhone = phoneField.getText().trim();
+        String newContact = contactArea.getText();
+
+        if (newEmail.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Email cannot be empty.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        currentAdmin.setEmail(newEmail);
+        currentAdmin.setPhone(newPhone);
+        currentAdmin.setContactDetails(newContact);
+
+        if (userDAO.updateUser(currentAdmin)) {
+            SessionManager.setCurrentUser(currentAdmin);
+            JOptionPane.showMessageDialog(this, "✅ Profile updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            loadAdminProfile();
+        } else {
+            JOptionPane.showMessageDialog(this, "❌ Failed to update profile.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void changeAdminProfilePicture() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "png", "gif"));
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try {
+                BufferedImage image = ImageIO.read(selectedFile);
+                if (image == null) {
+                    JOptionPane.showMessageDialog(this, "Invalid image file!", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                String uploadDir = "uploads/profile_pictures/";
+                File dir = new File(uploadDir);
+                if (!dir.exists()) dir.mkdirs();
+
+                String timestamp = String.valueOf(System.currentTimeMillis());
+                String extension = selectedFile.getName().substring(selectedFile.getName().lastIndexOf("."));
+                String newFileName = "admin_" + currentAdmin.getUserId() + "_" + timestamp + extension;
+                String filePath = uploadDir + newFileName;
+
+                int maxSize = 200;
+                BufferedImage resizedImage = resizeImage(image, maxSize);
+                ImageIO.write(resizedImage, extension.substring(1), new File(filePath));
+
+                if (userDAO.updateProfilePicture(currentAdmin.getUserId(), filePath)) {
+                    currentAdmin.setProfilePicture(filePath);
+                    SessionManager.setCurrentUser(currentAdmin);
+                    loadAndDisplayProfilePicture();
+                    JOptionPane.showMessageDialog(this, "✅ Profile picture updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "❌ Failed to save picture.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private BufferedImage resizeImage(BufferedImage originalImage, int maxSize) {
+        int width = originalImage.getWidth();
+        int height = originalImage.getHeight();
+        int newWidth, newHeight;
+        if (width > height) {
+            newWidth = maxSize;
+            newHeight = (height * maxSize) / width;
+        } else {
+            newHeight = maxSize;
+            newWidth = (width * maxSize) / height;
+        }
+        Image scaledImage = originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+        BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = resizedImage.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, newWidth, newHeight, null);
+        g2d.dispose();
+        return resizedImage;
+    }
+
+    // ==================== CUSTOM TABLE STYLING ====================
     private void styleTable(JTable table) {
-        // Custom header renderer to force black background & white text
         JTableHeader header = table.getTableHeader();
         header.setDefaultRenderer(new DefaultTableCellRenderer() {
             @Override
@@ -145,7 +399,6 @@ public class AdminUI extends JFrame {
         header.setFont(new Font("Segoe UI", Font.BOLD, 14));
         header.setPreferredSize(new Dimension(0, 35));
 
-        // Row styling
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setRowHeight(32);
         table.setIntercellSpacing(new Dimension(10, 5));
@@ -153,7 +406,6 @@ public class AdminUI extends JFrame {
         table.setGridColor(new Color(200, 200, 200));
         table.setAutoCreateRowSorter(true);
 
-        // Alternating row colors
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -193,7 +445,6 @@ public class AdminUI extends JFrame {
         JTabbedPane userTabs = new JTabbedPane();
         userTabs.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        // Students
         studentModel = new DefaultTableModel(new String[]{"ID", "Username", "Full Name", "Reg No", "Batch", "Semester", "Repeat"}, 0);
         studentTable = new JTable(studentModel);
         styleTable(studentTable);
@@ -201,7 +452,6 @@ public class AdminUI extends JFrame {
                 e -> editStudent(), e -> deleteStudent());
         userTabs.addTab("👨‍🎓 Students", studentPanel);
 
-        // Lecturers
         lecturerModel = new DefaultTableModel(new String[]{"ID", "Username", "Full Name", "Email", "Phone", "Emp No", "Department"}, 0);
         lecturerTable = new JTable(lecturerModel);
         styleTable(lecturerTable);
@@ -209,7 +459,6 @@ public class AdminUI extends JFrame {
                 e -> editLecturer(), e -> deleteLecturer());
         userTabs.addTab("👩‍🏫 Lecturers", lecturerPanel);
 
-        // Technical Officers
         officerModel = new DefaultTableModel(new String[]{"ID", "Username", "Full Name", "Email", "Phone", "Emp No", "Department"}, 0);
         officerTable = new JTable(officerModel);
         styleTable(officerTable);
@@ -1020,7 +1269,9 @@ public class AdminUI extends JFrame {
 
         JComboBox<String> courseCombo = new JComboBox<>();
         List<Course> courses = courseDAO.getAllCourses();
-        for (Course c : courses) courseCombo.addItem(c.getCourseId() + " - " + c.getCourseCode());
+        for (Course c : courses) {
+            courseCombo.addItem(c.getCourseId() + " - " + c.getCourseCode());
+        }
 
         JComboBox<String> dayCombo = new JComboBox<>(new String[]{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"});
         JTextField start = new JTextField("09:00:00");
@@ -1193,11 +1444,7 @@ public class AdminUI extends JFrame {
                         "   MANAGEMENT SYSTEM\n" +
                         "═══════════════════════════════════════\n\n" +
                         "Admin Module v2.0\n\n" +
-                        "Full CRUD Operations:\n" +
-                        "• Manage Users (Add/Edit/Delete)\n" +
-                        "• Manage Courses (Add/Edit/Delete)\n" +
-                        "• Manage Notices (Add/Edit/Delete)\n" +
-                        "• Manage Timetable (Add/Edit/Delete)\n\n" +
+                        "Full CRUD Operations + Profile Management\n\n" +
                         "© 2024 Faculty of Technology",
                 "About", JOptionPane.INFORMATION_MESSAGE);
     }
